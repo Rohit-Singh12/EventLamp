@@ -6,6 +6,8 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
     env:
       REPO_OWNER: ${{ github.repository_owner }}
       REPO_OWNER_LOWER: ${{ github.repository_owner || 'unknown' }}
