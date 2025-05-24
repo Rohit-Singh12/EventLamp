@@ -41,7 +41,7 @@ jobs:
 
       - name: Push Backend Docker Image
         run: |
-          docker push ghcr.io/${REPO_OWNER_LOWER}/eventlamp-backend:latest
+          docker push ghcr.io/${REPO_OWNER_LOWER}/eventlamp-be:latest
 
           
 
