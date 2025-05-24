@@ -10,9 +10,8 @@ jobs:
       packages: write
     env:
       REPO_OWNER: ${{ github.repository_owner }}
-      REPO_OWNER_LOWER: ${{ github.repository_owner || 'unknown' }}
     steps:
-      - name: checkout-code
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Log in to Github Container Registry
@@ -20,7 +19,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{secrets.GHCR_PAT}}
+          password: ${{ secrets.GHCR_PAT }}
 
       - name: Set lowercase owner name
         id: lowercase
@@ -29,63 +28,63 @@ jobs:
 
       - name: Build Frontend Docker Image
         run: |
-          docker build --build-arg NEXT_PUBLIC_API_BACKEND_URL=${{ secrets.NEXT_PUBLIC_API_BACKEND_URL }} -t ghcr.io/${REPO_OWNER_LOWER}/eventlamp-fe:latest ./Frontend
+          docker build --build-arg NEXT_PUBLIC_API_BACKEND_URL=${{ secrets.NEXT_PUBLIC_API_BACKEND_URL }} -t ghcr.io/${{ env.REPO_OWNER_LOWER }}/eventlamp-fe:latest ./Frontend
 
       - name: Build Backend Docker Image
         run: |
-          docker build -t ghcr.io/${REPO_OWNER_LOWER}/eventlamp-be:latest ./Backend
+          docker build -t ghcr.io/${{ env.REPO_OWNER_LOWER }}/eventlamp-be:latest ./Backend
 
       - name: Push Frontend Docker Image
         run: |
-          docker push ghcr.io/${REPO_OWNER_LOWER}/eventlamp-fe:latest
+          docker push ghcr.io/${{ env.REPO_OWNER_LOWER }}/eventlamp-fe:latest
 
       - name: Push Backend Docker Image
         run: |
-          docker push ghcr.io/${REPO_OWNER_LOWER}/eventlamp-be:latest
+          docker push ghcr.io/${{ env.REPO_OWNER_LOWER }}/eventlamp-be:latest
 
   deploy:
     runs-on: ubuntu-latest
     needs: build-and-push
-    env:
-      REPO_OWNER: ${{ github.repository_owner }}
-      REPO_OWNER_LOWER: ${{ github.repository_owner || 'unknown' }}
 
     steps:
       - name: Setup SSH  
         uses: webfactory/ssh-agent@v0.7.0
         with:
-          ssh-private-key: ${{secrets.HOSTINGER_SSH_KEY}}
+          ssh-private-key: ${{ secrets.HOSTINGER_SSH_KEY }}
 
-      - name: Set lowercase owner name
-        id: lowercase
-        run: |
-          echo "REPO_OWNER_LOWER=$(echo '${{ env.REPO_OWNER }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-          
       - name: Deploy to Hostinger
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.HOSTINGER_SSH_USER }}@${{ secrets.HOSTINGER_SSH_HOST }} << EOF
+            REPO_OWNER_LOWER=\$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+
             echo "Logging into GHCR..."
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
-            echo "pulling image ghcr.io/${REPO_OWNER_LOWER}/eventlamp-fe:latest"
-            docker pull ghcr.io/${REPO_OWNER_LOWER}/eventlamp-fe:latest
-            echo "pulling image ghcr.io/${REPO_OWNER_LOWER}/eventlamp-be:latest"
-            docker pull ghcr.io/${REPO_OWNER_LOWER}/eventlamp-be:latest
-            
+            echo "Pulling images..."
+            docker pull ghcr.io/\$REPO_OWNER_LOWER/eventlamp-fe:latest
+            docker pull ghcr.io/\$REPO_OWNER_LOWER/eventlamp-be:latest
+
             echo "Stopping old containers..."
             docker stop eventlamp-fe || true
             docker rm eventlamp-fe || true
             docker stop eventlamp-be || true
             docker rm eventlamp-be || true
-            
+
             echo "Running new containers..."
-            docker run -d --restart unless-stopped -e NEXT_PUBLIC_API_BACKEND_URL=https://api.eventlamp.com --name eventlamp-fe -p 4000:4000 ghcr.io/${REPO_OWNER_LOWER}/eventlamp-fe:latest
-            docker run -d --restart unless-stopped -e MONGO_URI=${{secrets.MONGO_URI}} -e PORT=5000 -e EMAIL="applutetech@gmail.com" -e EMAIL_PASSWORD=${{secrets.EMAIL_PASSWORD}} -e JWT_SECRET=${{secrets.JWT_SECRET}} -e CLIENT_URL=http://localhost:3001 --name eventlamp-be -p 5000:5000 ghcr.io/${REPO_OWNER_LOWER}/eventlamp-be:latest
-            
+            docker run -d --restart unless-stopped \
+              -e NEXT_PUBLIC_API_BACKEND_URL=https://api.eventlamp.com \
+              --name eventlamp-fe -p 4000:4000 \
+              ghcr.io/\$REPO_OWNER_LOWER/eventlamp-fe:latest
+
+            docker run -d --restart unless-stopped \
+              -e MONGO_URI=${{ secrets.MONGO_URI }} \
+              -e PORT=5000 \
+              -e EMAIL="applutetech@gmail.com" \
+              -e EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }} \
+              -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
+              -e CLIENT_URL=http://localhost:3001 \
+              --name eventlamp-be -p 5000:5000 \
+              ghcr.io/\$REPO_OWNER_LOWER/eventlamp-be:latest
+
             echo "Deployment complete!"
           EOF
-      
-
-          
-
-      
