@@ -5,8 +5,8 @@
   "proxy": "https://api.eventlamp.com",
   "scripts": {
     "build": "next build",
-    "dev": "next dev -p 4000",
-    "start": "next start -p 4000",
+    "dev": "next dev -p 4005",
+    "start": "next start -p 4005",
     "lint": "next lint"
   },
   "dependencies": {

@@ -73,7 +73,7 @@ jobs:
             echo "Running new containers..."
             docker run -d --restart unless-stopped \
               -e NEXT_PUBLIC_API_BACKEND_URL=https://api.eventlamp.com \
-              --name eventlamp-fe -p 4000:4000 \
+              --name eventlamp-fe -p 4005:4005 \
               ghcr.io/\$REPO_OWNER_LOWER/eventlamp-fe:latest
 
             docker run -d --restart unless-stopped \

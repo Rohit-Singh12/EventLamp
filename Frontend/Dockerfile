@@ -30,6 +30,6 @@ COPY --from=builder /app/jsconfig.json ./
 
 RUN npm ci --omit=dev --ignore-scripts
 
-EXPOSE 4000
+EXPOSE 4005
 
 CMD ["npm", "start"]
