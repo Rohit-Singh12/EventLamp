@@ -6,9 +6,9 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    outputs: 
-      frontend-image: ghcr.io/${{github.repository_owner.toLower()}}/eventlamp-fe:latest
-      backend-image: ghcr.io/${{github.repository_owner.toLower()}}/eventlamp-be:latest
+    env:
+      REPO_OWNER: ${{ github.repository_owner }}
+      REPO_OWNER_LOWER: ${{ github.repository_owner || 'unknown' }}
     steps:
       - name: checkout-code
         uses: actions/checkout@v3
@@ -20,21 +20,26 @@ jobs:
           username: ${{ github.actor }}
           password: ${{secrets.GHCR_PAT}}
 
+      - name: Set lowercase owner name
+        id: lowercase
+        run: |
+          echo "REPO_OWNER_LOWER=$(echo '${{ env.REPO_OWNER }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       - name: Build Frontend Docker Image
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner.toLower() }}/eventlamp-fe:latest ./Frontend
+          docker build -t ghcr.io/${REPO_OWNER_LOWER}/eventlamp-fe:latest ./Frontend
 
       - name: Build Backend Docker Image
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner.toLower() }}/eventlamp-be:latest ./Backend
+          docker build -t ghcr.io/${REPO_OWNER_LOWER}/eventlamp-be:latest ./Backend
 
       - name: Push Frontend Docker Image
         run: |
-          docker push ghcr.io/${{ github.repository_owner.toLower() }}/eventlamp-fe:latest
+          docker push ghcr.io/${REPO_OWNER_LOWER}/eventlamp-fe:latest
 
       - name: Push Backend Docker Image
         run: |
-          docker push ghcr.io/${{ github.repository_owner.toLower() }}/eventlamp-backend:latest
+          docker push ghcr.io/${REPO_OWNER_LOWER}/eventlamp-backend:latest
 
           
 
